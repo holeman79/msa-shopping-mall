@@ -1,4 +1,4 @@
-package com.shopping.service.member.api
+package com.shopping.service.member.internal
 
 import com.shopping.context.SellerApprovalStatus as ContextSellerApprovalStatus
 import com.shopping.context.UserRole
@@ -7,9 +7,10 @@ import com.shopping.service.member.context.MemberContextMapper.toContext
 import com.shopping.service.member.domain.Member
 import java.time.Instant
 
-data class MemberResponse(
+data class MemberInternalView(
     val id: Long,
     val email: String,
+    val passwordHash: String,
     val name: String,
     val phone: String?,
     val role: UserRole,
@@ -18,9 +19,10 @@ data class MemberResponse(
     val joinedAt: Instant,
 ) {
     companion object {
-        fun from(member: Member): MemberResponse = MemberResponse(
-            id = requireNotNull(member.id) { "persisted member must have id" },
+        fun from(member: Member): MemberInternalView = MemberInternalView(
+            id = requireNotNull(member.id),
             email = member.email,
+            passwordHash = member.passwordHash,
             name = member.name,
             phone = member.phone,
             role = member.role.toContext(),
@@ -30,3 +32,11 @@ data class MemberResponse(
         )
     }
 }
+
+data class MemberInternalCreateRequest(
+    val email: String,
+    val passwordHash: String,
+    val name: String,
+    val phone: String?,
+    val role: UserRole,
+)

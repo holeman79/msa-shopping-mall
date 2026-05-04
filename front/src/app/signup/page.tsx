@@ -29,7 +29,7 @@ export default function SignupPage() {
     e.preventDefault();
     signup.mutate(
       { email, password, name, phone: phone || undefined, role },
-      { onSuccess: () => router.push("/login?signup=ok") },
+      { onSuccess: () => router.push("/") },
     );
   };
 

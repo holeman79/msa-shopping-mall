@@ -1,23 +1,14 @@
 spring:
   application:
-    name: member-service
-  datasource:
-    url: jdbc:postgresql://localhost:5432/member_db
-    username: shopping
-    password: shopping
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    name: auth-service
+  data:
+    redis:
+      host: localhost
+      port: 6379
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: member-group
+      group-id: auth-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -28,7 +19,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8081
+  port: 8086
 
 eureka:
   client:
@@ -37,10 +28,14 @@ eureka:
   instance:
     prefer-ip-address: true
 
-admin-seed:
-  email: "admin@msa-shop.com"
-  password: "admin1234"
-  name: "관리자"
+jwt:
+  secret: "change-me-in-production-use-at-least-256-bits-of-entropy-here-please"
+  expiration-hours: 24
+  issuer: "msa-shopping-mall"
+
+user-context-cache:
+  # JWT exp(24h)보다 길게 유지해 토큰 유효 동안 캐시 미스 0%를 목표.
+  ttl-minutes: 1500
 
 management:
   endpoints:

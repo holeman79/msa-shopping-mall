@@ -1,8 +1,8 @@
-package com.shopping.service.member.context
+package com.shopping.service.auth.context
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.shopping.context.UserContext
-import com.shopping.service.member.config.UserContextCacheProperties
+import com.shopping.service.auth.config.UserContextCacheProperties
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
@@ -18,11 +18,6 @@ class UserContextCache(
     fun put(context: UserContext) {
         val json = objectMapper.writeValueAsString(context)
         redisTemplate.opsForValue().set(key(context.id), json, ttl)
-    }
-
-    fun get(memberId: Long): UserContext? {
-        val json = redisTemplate.opsForValue().get(key(memberId)) ?: return null
-        return objectMapper.readValue(json, UserContext::class.java)
     }
 
     fun evict(memberId: Long) {

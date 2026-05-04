@@ -23,6 +23,10 @@ spring:
                 allow-credentials: true
                 max-age: 3600
           routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
             - id: member-service
               uri: lb://member-service
               predicates:
@@ -55,6 +59,5 @@ eureka:
 jwt:
   secret: "change-me-in-production-use-at-least-256-bits-of-entropy-here-please"
   public-paths:
-    - "/api/members/login"
-    - "/api/members/signup"
+    - "/api/auth/**"
     - "/actuator/**"

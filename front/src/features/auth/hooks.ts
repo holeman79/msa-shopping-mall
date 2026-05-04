@@ -6,7 +6,11 @@ import { useAuthStore } from "./store";
 import type { LoginPayload, LoginResult, SignupPayload } from "./types";
 
 export function useSignup() {
-  return useMutation({ mutationFn: (payload: SignupPayload) => authApi.signup(payload) });
+  const setSession = useAuthStore((s) => s.setSession);
+  return useMutation<LoginResult, Error, SignupPayload>({
+    mutationFn: (payload) => authApi.signup(payload),
+    onSuccess: (data) => setSession(data.token, data.expiresAt, data.member),
+  });
 }
 
 export function useLogin() {
