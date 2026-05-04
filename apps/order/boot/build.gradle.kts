@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":libs:shopping-context"))
     implementation(project(":apps:order:domain"))
     implementation(project(":apps:order:application"))
     implementation(project(":apps:order:infrastructure:db"))

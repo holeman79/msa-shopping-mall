@@ -1,6 +1,9 @@
 package com.shopping.infra.gateway
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.shopping.context.USER_CONTEXT_HEADER
+import com.shopping.context.UserContext
+import com.shopping.context.UserContextCodec
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import org.slf4j.LoggerFactory
@@ -22,17 +25,19 @@ import javax.crypto.spec.SecretKeySpec
 class JwtAuthenticationFilter(
     private val properties: JwtProperties,
     private val objectMapper: ObjectMapper,
+    private val userContextResolver: UserContextResolver,
 ) : GlobalFilter, Ordered {
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val pathMatcher = AntPathMatcher()
     private val key = SecretKeySpec(properties.secret.toByteArray(), "HmacSHA256")
     private val parser = Jwts.parser().verifyWith(key).build()
+    private val codec = UserContextCodec(objectMapper)
 
     override fun getOrder(): Int = -100
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
-        if (exchange.request.method?.name() == "OPTIONS") {
+        if (exchange.request.method.name() == "OPTIONS") {
             return chain.filter(exchange)
         }
         val path = exchange.request.uri.path
@@ -46,23 +51,26 @@ class JwtAuthenticationFilter(
         }
 
         val token = authHeader.removePrefix("Bearer ").trim()
-        return try {
-            val claims = parser.parseSignedClaims(token).payload
-            val userId = claims.subject ?: return unauthorized(exchange.response, "INVALID_TOKEN", "subject 누락")
-            val role = claims["role"] as? String
-                ?: return unauthorized(exchange.response, "INVALID_TOKEN", "role claim 누락")
-
-            val mutated = exchange.mutate().request(
-                exchange.request.mutate()
-                    .header("X-User-Id", userId)
-                    .header("X-User-Role", role)
-                    .build(),
-            ).build()
-            chain.filter(mutated)
+        val memberId = try {
+            parser.parseSignedClaims(token).payload.subject?.toLongOrNull()
+                ?: return unauthorized(exchange.response, "INVALID_TOKEN", "subject 누락")
         } catch (e: JwtException) {
             log.debug("JWT validation failed: {}", e.message)
-            unauthorized(exchange.response, "INVALID_TOKEN", "유효하지 않은 토큰입니다.")
+            return unauthorized(exchange.response, "INVALID_TOKEN", "유효하지 않은 토큰입니다.")
         }
+
+        return userContextResolver.resolve(memberId)
+            .flatMap { context -> chain.filter(injectUserContext(exchange, context)) }
+            .onErrorResume(UserContextNotFoundException::class.java) {
+                unauthorized(exchange.response, "USER_NOT_FOUND", "토큰의 회원이 존재하지 않습니다.")
+            }
+    }
+
+    private fun injectUserContext(exchange: ServerWebExchange, context: UserContext): ServerWebExchange {
+        val mutated = exchange.request.mutate()
+            .header(USER_CONTEXT_HEADER, codec.encode(context))
+            .build()
+        return exchange.mutate().request(mutated).build()
     }
 
     private fun isPublic(path: String): Boolean =
