@@ -37,33 +37,44 @@ class JwtAuthenticationFilter(
     override fun getOrder(): Int = -100
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
-        if (exchange.request.method.name() == "OPTIONS") {
-            return chain.filter(exchange)
+        // 외부에서 들어온 X-User-Context는 절대 신뢰하지 않는다.
+        // 게이트웨이가 인증한 결과로만 채워질 수 있게, 진입 시점에 무조건 제거.
+        val sanitized = stripUntrustedHeaders(exchange)
+
+        if (sanitized.request.method.name() == "OPTIONS") {
+            return chain.filter(sanitized)
         }
-        val path = exchange.request.uri.path
+        val path = sanitized.request.uri.path
         if (isPublic(path)) {
-            return chain.filter(exchange)
+            return chain.filter(sanitized)
         }
 
-        val authHeader = exchange.request.headers.getFirst("Authorization")
+        val authHeader = sanitized.request.headers.getFirst("Authorization")
         if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) {
-            return unauthorized(exchange.response, "MISSING_TOKEN", "Authorization 헤더가 필요합니다.")
+            return unauthorized(sanitized.response, "MISSING_TOKEN", "Authorization 헤더가 필요합니다.")
         }
 
         val token = authHeader.removePrefix("Bearer ").trim()
         val memberId = try {
             parser.parseSignedClaims(token).payload.subject?.toLongOrNull()
-                ?: return unauthorized(exchange.response, "INVALID_TOKEN", "subject 누락")
+                ?: return unauthorized(sanitized.response, "INVALID_TOKEN", "subject 누락")
         } catch (e: JwtException) {
             log.debug("JWT validation failed: {}", e.message)
-            return unauthorized(exchange.response, "INVALID_TOKEN", "유효하지 않은 토큰입니다.")
+            return unauthorized(sanitized.response, "INVALID_TOKEN", "유효하지 않은 토큰입니다.")
         }
 
         return userContextResolver.resolve(memberId)
-            .flatMap { context -> chain.filter(injectUserContext(exchange, context)) }
+            .flatMap { context -> chain.filter(injectUserContext(sanitized, context)) }
             .onErrorResume(UserContextNotFoundException::class.java) {
-                unauthorized(exchange.response, "USER_NOT_FOUND", "토큰의 회원이 존재하지 않습니다.")
+                unauthorized(sanitized.response, "USER_NOT_FOUND", "토큰의 회원이 존재하지 않습니다.")
             }
+    }
+
+    private fun stripUntrustedHeaders(exchange: ServerWebExchange): ServerWebExchange {
+        val request = exchange.request.mutate()
+            .headers { it.remove(USER_CONTEXT_HEADER) }
+            .build()
+        return exchange.mutate().request(request).build()
     }
 
     private fun injectUserContext(exchange: ServerWebExchange, context: UserContext): ServerWebExchange {

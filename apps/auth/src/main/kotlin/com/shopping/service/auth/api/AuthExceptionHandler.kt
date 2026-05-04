@@ -1,8 +1,8 @@
-package com.shopping.service.member.api
+package com.shopping.service.auth.api
 
-import com.shopping.service.member.internal.MemberByEmailNotFoundException
-import com.shopping.service.member.service.DuplicateEmailException
-import com.shopping.service.member.service.MemberNotFoundException
+import com.shopping.service.auth.service.DuplicateEmailException
+import com.shopping.service.auth.service.InactiveMemberException
+import com.shopping.service.auth.service.InvalidCredentialsException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -19,19 +19,19 @@ data class ErrorResponse(
 )
 
 @RestControllerAdvice
-class MemberExceptionHandler {
+class AuthExceptionHandler {
 
     @ExceptionHandler(DuplicateEmailException::class)
     fun handleDuplicateEmail(e: DuplicateEmailException) =
         error(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", e.message)
 
-    @ExceptionHandler(MemberNotFoundException::class)
-    fun handleNotFound(e: MemberNotFoundException) =
-        error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", e.message)
+    @ExceptionHandler(InvalidCredentialsException::class)
+    fun handleInvalidCredentials(e: InvalidCredentialsException) =
+        error(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", e.message)
 
-    @ExceptionHandler(MemberByEmailNotFoundException::class)
-    fun handleNotFoundByEmail(e: MemberByEmailNotFoundException) =
-        error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", e.message)
+    @ExceptionHandler(InactiveMemberException::class)
+    fun handleInactive(e: InactiveMemberException) =
+        error(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", e.message)
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {

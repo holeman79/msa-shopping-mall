@@ -5,6 +5,7 @@ include(
     "infra:discovery",
     "infra:config",
     "libs:shopping-context",
+    "apps:auth",
     "apps:member",
     "apps:product",
     "apps:payment",

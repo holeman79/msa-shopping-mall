@@ -1,4 +1,4 @@
-package com.shopping.service.member.config
+package com.shopping.service.auth.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
