@@ -33,5 +33,15 @@ data class LoginRequest(
 data class AuthenticationResponse(
     val token: String,
     val expiresAt: Instant,
+    val refreshToken: String,
+    val refreshExpiresAt: Instant,
     val member: UserContext,
+)
+
+data class RefreshRequest(
+    @field:NotBlank val refreshToken: String,
+)
+
+data class LogoutRequest(
+    @field:NotBlank val refreshToken: String,
 )

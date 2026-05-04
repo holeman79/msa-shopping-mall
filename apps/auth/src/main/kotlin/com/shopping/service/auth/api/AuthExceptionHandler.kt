@@ -1,5 +1,6 @@
 package com.shopping.service.auth.api
 
+import com.shopping.service.auth.security.RefreshTokenNotFoundException
 import com.shopping.service.auth.service.DuplicateEmailException
 import com.shopping.service.auth.service.InactiveMemberException
 import com.shopping.service.auth.service.InvalidCredentialsException
@@ -28,6 +29,10 @@ class AuthExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException::class)
     fun handleInvalidCredentials(e: InvalidCredentialsException) =
         error(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", e.message)
+
+    @ExceptionHandler(RefreshTokenNotFoundException::class)
+    fun handleRefreshNotFound(e: RefreshTokenNotFoundException) =
+        error(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", e.message)
 
     @ExceptionHandler(InactiveMemberException::class)
     fun handleInactive(e: InactiveMemberException) =

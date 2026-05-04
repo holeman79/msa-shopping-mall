@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useLogout } from "@/features/auth/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import type { MemberRole } from "@/features/auth/types";
 
@@ -23,7 +24,7 @@ const ROLE_TONE: Record<MemberRole, "default" | "info" | "danger"> = {
 export function AuthMenu() {
   const router = useRouter();
   const member = useAuthStore((s) => s.member);
-  const clear = useAuthStore((s) => s.clear);
+  const logout = useLogout();
 
   // Persist hydrates client-side only — avoid hydration mismatch.
   const [hydrated, setHydrated] = useState(false);
@@ -46,8 +47,8 @@ export function AuthMenu() {
     );
   }
 
-  const handleLogout = () => {
-    clear();
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 

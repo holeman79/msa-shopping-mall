@@ -30,5 +30,7 @@ export interface LoginPayload {
 export interface LoginResult {
   token: string;
   expiresAt: string;
+  refreshToken: string;
+  refreshExpiresAt: string;
   member: AuthMember;
 }

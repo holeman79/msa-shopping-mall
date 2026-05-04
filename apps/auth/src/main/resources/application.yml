@@ -30,12 +30,13 @@ eureka:
 
 jwt:
   secret: "change-me-in-production-use-at-least-256-bits-of-entropy-here-please"
-  expiration-hours: 24
+  access-expiration-minutes: 30
+  refresh-expiration-days: 14
   issuer: "msa-shopping-mall"
 
 user-context-cache:
-  # JWT exp(24h)보다 길게 유지해 토큰 유효 동안 캐시 미스 0%를 목표.
-  ttl-minutes: 1500
+  # 리프레시 토큰 수명(14일)과 맞춤. 액세스 만료 후에도 refresh 흐름이 살아있는 동안 캐시 유지.
+  ttl-minutes: 20160
 
 management:
   endpoints:
