@@ -1,0 +1,57 @@
+import type { Order } from "./types";
+
+export const MOCK_ORDERS: Order[] = [
+  {
+    id: "ORD-2026-0001",
+    memberId: 1,
+    memberName: "조원진",
+    status: "DELIVERED",
+    totalAmount: 1_449_000,
+    lines: [
+      { productId: 2, productName: "다이슨 V15 디텍트", unitPrice: 1_090_000, quantity: 1 },
+      { productId: 1, productName: "에어팟 프로 2세대", unitPrice: 359_000, quantity: 1 },
+    ],
+    shippingAddress: "서울 강남구 테헤란로 123, 4층",
+    orderedAt: "2026-04-28T10:15:00Z",
+  },
+  {
+    id: "ORD-2026-0002",
+    memberId: 2,
+    memberName: "김민지",
+    status: "SHIPPING",
+    totalAmount: 64_000,
+    lines: [{ productId: 4, productName: "스타벅스 리저브 원두 250g", unitPrice: 32_000, quantity: 2 }],
+    shippingAddress: "서울 마포구 양화로 45",
+    orderedAt: "2026-05-02T08:42:00Z",
+  },
+  {
+    id: "ORD-2026-0003",
+    memberId: 3,
+    memberName: "박도현",
+    status: "PAID",
+    totalAmount: 2_490_000,
+    lines: [{ productId: 5, productName: "LG 그램 17 (2026)", unitPrice: 2_490_000, quantity: 1 }],
+    shippingAddress: "부산 해운대구 우동 1488",
+    orderedAt: "2026-05-03T19:00:00Z",
+  },
+  {
+    id: "ORD-2026-0004",
+    memberId: 1,
+    memberName: "조원진",
+    status: "PENDING",
+    totalAmount: 359_000,
+    lines: [{ productId: 1, productName: "에어팟 프로 2세대", unitPrice: 359_000, quantity: 1 }],
+    shippingAddress: "서울 강남구 테헤란로 123, 4층",
+    orderedAt: "2026-05-04T07:55:00Z",
+  },
+  {
+    id: "ORD-2026-0005",
+    memberId: 4,
+    memberName: "이수빈",
+    status: "CANCELLED",
+    totalAmount: 219_000,
+    lines: [{ productId: 3, productName: "나이키 에어맥스 97", unitPrice: 219_000, quantity: 1 }],
+    shippingAddress: "인천 연수구 송도동 23",
+    orderedAt: "2026-04-19T13:30:00Z",
+  },
+];
