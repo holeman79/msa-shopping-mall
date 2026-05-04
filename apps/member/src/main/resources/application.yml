@@ -6,6 +6,10 @@ spring:
     username: shopping
     password: shopping
     driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
   jpa:
     hibernate:
       ddl-auto: update
@@ -41,6 +45,9 @@ jwt:
   secret: "change-me-in-production-use-at-least-256-bits-of-entropy-here-please"
   expiration-hours: 24
   issuer: "msa-shopping-mall"
+
+user-context-cache:
+  ttl-minutes: 30
 
 admin-seed:
   email: "admin@msa-shop.com"

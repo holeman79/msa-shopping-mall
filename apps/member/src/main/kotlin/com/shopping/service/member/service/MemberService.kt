@@ -5,6 +5,8 @@ import com.shopping.service.member.api.LoginResponse
 import com.shopping.service.member.api.MemberResponse
 import com.shopping.service.member.api.SignupRequest
 import com.shopping.service.member.api.SignupRole
+import com.shopping.service.member.context.MemberContextMapper
+import com.shopping.service.member.context.UserContextCache
 import com.shopping.service.member.domain.Member
 import com.shopping.service.member.domain.MemberRole
 import com.shopping.service.member.domain.MemberStatus
@@ -26,6 +28,7 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtIssuer: JwtIssuer,
+    private val userContextCache: UserContextCache,
 ) {
 
     @Transactional
@@ -46,7 +49,9 @@ class MemberService(
                 SellerApprovalStatus.NOT_APPLICABLE
             },
         )
-        return MemberResponse.from(memberRepository.save(member))
+        val saved = memberRepository.save(member)
+        userContextCache.put(MemberContextMapper.toContext(saved))
+        return MemberResponse.from(saved)
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +71,7 @@ class MemberService(
             email = member.email,
             role = member.role,
         )
+        userContextCache.put(MemberContextMapper.toContext(member))
         return LoginResponse(
             token = issued.token,
             expiresAt = issued.expiresAt,
