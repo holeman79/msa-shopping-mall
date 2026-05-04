@@ -11,6 +11,7 @@ import com.shopping.service.auth.client.MemberInternalView
 import com.shopping.service.auth.client.MemberServiceClient
 import com.shopping.service.auth.context.UserContextCache
 import com.shopping.service.auth.security.JwtIssuer
+import com.shopping.service.auth.security.RefreshTokenStore
 import feign.FeignException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -25,6 +26,7 @@ class AuthService(
     private val memberServiceClient: MemberServiceClient,
     private val passwordEncoder: PasswordEncoder,
     private val jwtIssuer: JwtIssuer,
+    private val refreshTokenStore: RefreshTokenStore,
     private val userContextCache: UserContextCache,
 ) {
 
@@ -56,11 +58,36 @@ class AuthService(
         return authenticate(member)
     }
 
+    /**
+     * Token rotation: 기존 refresh를 즉시 폐기하고 새 access + 새 refresh를 발급.
+     */
+    fun refresh(refreshToken: String): AuthenticationResponse {
+        val record = refreshTokenStore.consume(refreshToken)
+        val member = memberServiceClient.findById(record.memberId)
+        if (member.status != UserStatus.ACTIVE) {
+            throw InactiveMemberException(member.status)
+        }
+        return authenticate(member)
+    }
+
+    fun logout(refreshToken: String) {
+        // 토큰을 가지고 있으면 그 안의 memberId로 캐시도 비우면 좋겠지만,
+        // 토큰이 이미 만료되었거나 잘못됐어도 멱등하게 동작해야 하므로 단순 폐기만.
+        refreshTokenStore.revoke(refreshToken)
+    }
+
     private fun authenticate(member: MemberInternalView): AuthenticationResponse {
         val context = member.toContext()
         userContextCache.put(context)
-        val issued = jwtIssuer.issue(memberId = member.id, email = member.email, role = member.role)
-        return AuthenticationResponse(token = issued.token, expiresAt = issued.expiresAt, member = context)
+        val access = jwtIssuer.issue(memberId = member.id, email = member.email, role = member.role)
+        val refresh = refreshTokenStore.issue(member.id)
+        return AuthenticationResponse(
+            token = access.token,
+            expiresAt = access.expiresAt,
+            refreshToken = refresh.token,
+            refreshExpiresAt = refresh.expiresAt,
+            member = context,
+        )
     }
 
     private fun existsByEmail(email: String): Boolean = findByEmailOrNull(email) != null

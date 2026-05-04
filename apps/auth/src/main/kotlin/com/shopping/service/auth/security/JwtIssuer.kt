@@ -15,9 +15,9 @@ class JwtIssuer(private val properties: JwtProperties) {
 
     private val key: SecretKey = SecretKeySpec(properties.secret.toByteArray(), "HmacSHA256")
 
-    fun issue(memberId: Long, email: String, role: UserRole): IssuedToken {
+    fun issue(memberId: Long, email: String, role: UserRole): IssuedAccessToken {
         val now = Instant.now()
-        val expiresAt = now.plus(properties.expirationHours, ChronoUnit.HOURS)
+        val expiresAt = now.plus(properties.accessExpirationMinutes, ChronoUnit.MINUTES)
         val token = Jwts.builder()
             .issuer(properties.issuer)
             .subject(memberId.toString())
@@ -27,11 +27,11 @@ class JwtIssuer(private val properties: JwtProperties) {
             .expiration(Date.from(expiresAt))
             .signWith(key, Jwts.SIG.HS256)
             .compact()
-        return IssuedToken(token = token, expiresAt = expiresAt)
+        return IssuedAccessToken(token = token, expiresAt = expiresAt)
     }
 }
 
-data class IssuedToken(
+data class IssuedAccessToken(
     val token: String,
     val expiresAt: Instant,
 )

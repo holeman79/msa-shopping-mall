@@ -73,16 +73,20 @@ Directory names are short (no `{name}-` prefix). Gradle project paths are `:apps
 **Authentication is a separate service: `apps/auth`.** Member-service holds identity records; auth-service issues tokens and writes the UserContext cache. Auth depends on member via Feign (`/internal/members/...`). Member-service does NOT issue or verify tokens.
 
 **Public auth endpoints (via gateway):**
-- `POST /api/auth/signup` — auth-service: hashes pw → calls `lb://member-service POST /internal/members` → caches UserContext → issues JWT → returns `{token, expiresAt, member: UserContext}`
-- `POST /api/auth/login` — auth-service: calls `lb://member-service GET /internal/members/by-email/{email}` → BCrypt-verifies pw → caches UserContext → issues JWT
+- `POST /api/auth/signup` — auth-service: hashes pw → calls `lb://member-service POST /internal/members` → caches UserContext → issues access JWT + refresh token → returns `{token, expiresAt, refreshToken, refreshExpiresAt, member: UserContext}`
+- `POST /api/auth/login` — same shape, calls `/internal/members/by-email/{email}` and BCrypt-verifies
+- `POST /api/auth/refresh` — accepts `{refreshToken}`, **rotates** (consumes old, issues new pair), 401 if invalid
+- `POST /api/auth/logout` — accepts `{refreshToken}`, idempotent revoke (204)
 - `POST /api/auth/oauth/{provider}/...` — Phase 2 (Kakao, Google) will live here
+
+**Token model.** Access token = JWT, **30-min TTL**, claims `sub`/`email`/`role`. Refresh token = opaque UUID, **14-day TTL**, stored server-side at Redis key `refresh:{token}` → `{memberId, issuedAt, expiresAt}`. Each `/refresh` call deletes the consumed token and issues a brand-new one (rotation). The frontend's `lib/api/client.ts` intercepts 401 from non-`/auth/*` paths, calls `/api/auth/refresh` once via a shared promise (so concurrent requests don't trigger N refreshes), retries the original request with the new access token, and clears the session if the refresh itself fails.
 
 **Internal endpoints (Feign-only, NOT routed by gateway):**
 - `GET /internal/members/by-email/{email}`, `GET /internal/members/{id}`, `POST /internal/members` on member-service. Reachable only via Eureka because gateway only routes `/api/**`.
 
 **Gateway flow.** `JwtAuthenticationFilter` (order = -100) validates JWT signature, then reads `user:{id}` from Redis and forwards `X-User-Context` (Base64 JSON). No `X-User-Id`/`X-User-Role`. Public paths (`jwt.public-paths`): `/api/auth/**`, `/actuator/**`. CORS preflight (OPTIONS) bypasses the filter. Services consume the context via `@AuthUser UserContext` (auto-config from `libs/shopping-context`).
 
-**Cache ownership** is intentionally split: `apps/auth` is the **sole writer** (every successful authentication) and the gateway is **read-only**. No HTTP fallback. If cache is missing, gateway returns 401 `USER_NOT_FOUND` → client re-logs in. To make this safe, `user-context-cache.ttl-minutes` (1500m / 25h on auth) is set longer than `jwt.expiration-hours` (24h), so a valid token always finds its entry. Cache miss only happens on Redis restart/flush or admin-forced eviction (both intentional "force-logout" semantics).
+**Cache ownership** is intentionally split: `apps/auth` is the **sole writer** (every successful authentication or refresh) and the gateway is **read-only**. No HTTP fallback. If cache is missing, gateway returns 401 `USER_NOT_FOUND` → client triggers refresh / re-logs in. To make this safe, `user-context-cache.ttl-minutes` (20160m / 14d) is aligned with the refresh-token TTL, so as long as the refresh flow is alive the cache is alive. Cache miss only happens on Redis restart/flush or admin-forced eviction (both intentional "force-logout" semantics).
 
 Roles: `CUSTOMER`, `SELLER`, `ADMIN`. Self-signup is allowed only for CUSTOMER/SELLER; ADMIN is provisioned by `AdminSeeder` (in member-service) on first boot using `admin-seed.*` properties (default `admin@msa-shop.com` / `admin1234` — change in non-dev). The shared JWT `secret` lives in `apps/auth` and `infra/gateway` yml — must match.
 
