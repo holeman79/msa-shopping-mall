@@ -7,7 +7,7 @@ plugins {
 
 dependencies {
     implementation(project(":libs:shopping-context"))
-    implementation("org.springframework.cloud:spring-cloud-starter-gateway")
+    implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

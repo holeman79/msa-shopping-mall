@@ -7,40 +7,42 @@ spring:
       port: 6379
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins:
-              - http://localhost:3000
-            allowed-methods: "*"
-            allowed-headers: "*"
-            allow-credentials: true
-            max-age: 3600
-      routes:
-        - id: member-service
-          uri: lb://member-service
-          predicates:
-            - Path=/api/members/**
-        - id: product-service
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/**
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/api/orders/**
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/payments/**
-        - id: cart-service
-          uri: lb://cart-service
-          predicates:
-            - Path=/api/carts/**
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - http://localhost:3000
+                allowed-methods: "*"
+                allowed-headers: "*"
+                allow-credentials: true
+                max-age: 3600
+          routes:
+            - id: member-service
+              uri: lb://member-service
+              predicates:
+                - Path=/api/members/**
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/**
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+            - id: cart-service
+              uri: lb://cart-service
+              predicates:
+                - Path=/api/carts/**
 
 server:
   port: 8080
