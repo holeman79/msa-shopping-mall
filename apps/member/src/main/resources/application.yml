@@ -47,7 +47,9 @@ jwt:
   issuer: "msa-shopping-mall"
 
 user-context-cache:
-  ttl-minutes: 30
+  # JWT exp(24h)보다 길게 유지해 토큰 유효 동안 캐시 미스 0%를 목표.
+  # 미스 발생 시 게이트웨이는 401을 즉시 반환 → 클라이언트가 재로그인하면서 자연 복구.
+  ttl-minutes: 1500
 
 admin-seed:
   email: "admin@msa-shop.com"

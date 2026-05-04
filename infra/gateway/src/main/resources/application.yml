@@ -56,7 +56,3 @@ jwt:
     - "/api/members/login"
     - "/api/members/signup"
     - "/actuator/**"
-
-user-context:
-  cache-ttl-minutes: 30
-  member-service-base-url: "lb://member-service"
