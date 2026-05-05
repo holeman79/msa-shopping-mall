@@ -8,4 +8,9 @@ export const authApi = {
     api.post<LoginResult>("/auth/refresh", { refreshToken }),
   logout: (refreshToken: string): Promise<void> => api.post<void>("/auth/logout", { refreshToken }),
   me: (): Promise<AuthMember> => api.get<AuthMember>("/members/me"),
+  kakao: {
+    authorizeUrl: (state?: string): Promise<{ url: string }> =>
+      api.get<{ url: string }>("/auth/oauth/kakao/authorize-url", state ? { query: { state } } : undefined),
+    login: (code: string): Promise<LoginResult> => api.post<LoginResult>("/auth/oauth/kakao/login", { code }),
+  },
 };

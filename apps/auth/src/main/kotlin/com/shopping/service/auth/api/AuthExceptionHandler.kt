@@ -1,9 +1,11 @@
 package com.shopping.service.auth.api
 
+import com.shopping.service.auth.oauth.kakao.KakaoOAuthException
 import com.shopping.service.auth.security.RefreshTokenNotFoundException
 import com.shopping.service.auth.service.DuplicateEmailException
 import com.shopping.service.auth.service.InactiveMemberException
 import com.shopping.service.auth.service.InvalidCredentialsException
+import com.shopping.service.auth.service.SocialAccountPasswordLoginException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -37,6 +39,14 @@ class AuthExceptionHandler {
     @ExceptionHandler(InactiveMemberException::class)
     fun handleInactive(e: InactiveMemberException) =
         error(HttpStatus.FORBIDDEN, "INACTIVE_MEMBER", e.message)
+
+    @ExceptionHandler(SocialAccountPasswordLoginException::class)
+    fun handleSocialPwLogin(e: SocialAccountPasswordLoginException) =
+        error(HttpStatus.CONFLICT, "SOCIAL_ACCOUNT", e.message)
+
+    @ExceptionHandler(KakaoOAuthException::class)
+    fun handleKakaoOAuth(e: KakaoOAuthException) =
+        error(HttpStatus.BAD_GATEWAY, "OAUTH_FAILURE", e.message)
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {

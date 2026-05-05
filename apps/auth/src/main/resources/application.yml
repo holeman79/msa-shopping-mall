@@ -38,6 +38,19 @@ user-context-cache:
   # 리프레시 토큰 수명(14일)과 맞춤. 액세스 만료 후에도 refresh 흐름이 살아있는 동안 캐시 유지.
   ttl-minutes: 20160
 
+oauth:
+  kakao:
+    # https://developers.kakao.com 에서 앱을 만들고 REST API 키를 받아 환경변수로 주입.
+    # 실제 운영에서는 vault/secret manager 사용. 로컬 개발은 .env 또는 system property로.
+    client-id: ${KAKAO_CLIENT_ID:replace-me}
+    # 일반 보안: 카카오 콘솔에서 "Client Secret 사용 - ON" 한 경우만 채움. 비활성화 상태면 빈 문자열.
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+    # 프론트엔드에서 카카오로 보낸 후 카카오가 리다이렉트시키는 콜백 URI (프론트 라우트와 정확히 일치).
+    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/auth/callback/kakao}
+    authorize-url: "https://kauth.kakao.com/oauth/authorize"
+    token-url: "https://kauth.kakao.com/oauth/token"
+    user-info-url: "https://kapi.kakao.com/v2/user/me"
+
 management:
   endpoints:
     web:

@@ -1,5 +1,6 @@
 package com.shopping.service.member.domain
 
+import com.shopping.context.AuthProvider
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -36,6 +37,14 @@ class Member(
     @Enumerated(EnumType.STRING)
     @Column(name = "seller_approval_status", nullable = false, length = 20)
     var sellerApprovalStatus: SellerApprovalStatus = SellerApprovalStatus.NOT_APPLICABLE,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    var provider: AuthProvider = AuthProvider.LOCAL,
+
+    /** Kakao user id, Google sub 등 OAuth 발급 ID. LOCAL은 null. */
+    @Column(name = "provider_id", length = 100)
+    var providerId: String? = null,
 
     @Column(name = "joined_at", nullable = false)
     var joinedAt: Instant = Instant.now(),

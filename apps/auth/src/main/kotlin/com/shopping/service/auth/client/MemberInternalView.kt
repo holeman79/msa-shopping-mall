@@ -1,5 +1,6 @@
 package com.shopping.service.auth.client
 
+import com.shopping.context.AuthProvider
 import com.shopping.context.SellerApprovalStatus
 import com.shopping.context.UserContext
 import com.shopping.context.UserRole
@@ -15,6 +16,8 @@ data class MemberInternalView(
     val role: UserRole,
     val status: UserStatus,
     val sellerApprovalStatus: SellerApprovalStatus,
+    val provider: AuthProvider,
+    val providerId: String?,
     val joinedAt: Instant,
 ) {
     fun toContext(): UserContext = UserContext(
@@ -35,4 +38,6 @@ data class MemberInternalCreateRequest(
     val name: String,
     val phone: String?,
     val role: UserRole,
+    val provider: AuthProvider = AuthProvider.LOCAL,
+    val providerId: String? = null,
 )
