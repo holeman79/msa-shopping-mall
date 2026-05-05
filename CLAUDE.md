@@ -77,7 +77,16 @@ Directory names are short (no `{name}-` prefix). Gradle project paths are `:apps
 - `POST /api/auth/login` — same shape, calls `/internal/members/by-email/{email}` and BCrypt-verifies
 - `POST /api/auth/refresh` — accepts `{refreshToken}`, **rotates** (consumes old, issues new pair), 401 if invalid
 - `POST /api/auth/logout` — accepts `{refreshToken}`, idempotent revoke (204)
-- `POST /api/auth/oauth/{provider}/...` — Phase 2 (Kakao, Google) will live here
+- `GET /api/auth/oauth/kakao/authorize-url` — returns `{url}` for client to redirect to Kakao
+- `POST /api/auth/oauth/kakao/login` — accepts `{code}` from Kakao callback; auth-service exchanges code → fetches Kakao user info → finds-or-creates Member (`provider=KAKAO`, `providerId=kakao_user_id`) → issues access+refresh tokens
+- Future: `oauth/google/...` — same shape
+
+**OAuth notes.**
+- Kakao API client uses `RestClient` (Spring 6.1+ blocking client; no WebFlux dep needed).
+- Member entity has `provider` (`LOCAL`/`KAKAO`/`GOOGLE`) + nullable `providerId`. Lookup priority on Kakao login: by `(provider, providerId)` → fallback to email match (rejects if email exists with a different provider). New Kakao users get a random unguessable password hash they can never use for password login.
+- `AuthService.login()` rejects password attempts when `member.provider != LOCAL` (returns 409 `SOCIAL_ACCOUNT`).
+- Configuration: `oauth.kakao.client-id` (REST API key from developers.kakao.com), `client-secret` (optional, only if "Client Secret 사용 - ON"), `redirect-uri` must match the frontend callback URL `http://localhost:3000/auth/callback/kakao`. Use `KAKAO_CLIENT_ID` env var to inject.
+- Frontend flow: button on /login and /signup → `GET /api/auth/oauth/kakao/authorize-url` → `window.location = url` → user authenticates with Kakao → Kakao redirects to `/auth/callback/kakao?code=...` → callback page sends code to `POST /api/auth/oauth/kakao/login` → stores tokens → redirects to `/`.
 
 **Token model.** Access token = JWT, **30-min TTL**, claims `sub`/`email`/`role`. Refresh token = opaque UUID, **14-day TTL**, stored server-side at Redis key `refresh:{token}` → `{memberId, issuedAt, expiresAt}`. Each `/refresh` call deletes the consumed token and issues a brand-new one (rotation). The frontend's `lib/api/client.ts` intercepts 401 from non-`/auth/*` paths, calls `/api/auth/refresh` once via a shared promise (so concurrent requests don't trigger N refreshes), retries the original request with the new access token, and clears the session if the refresh itself fails.
 

@@ -1,5 +1,6 @@
 package com.shopping.service.auth.service
 
+import com.shopping.context.AuthProvider
 import com.shopping.context.UserRole
 import com.shopping.context.UserStatus
 import com.shopping.service.auth.api.AuthenticationResponse
@@ -20,6 +21,8 @@ class DuplicateEmailException(email: String) : RuntimeException("이미 가입�
 class InvalidCredentialsException : RuntimeException("이메일 또는 비밀번호가 올바르지 않습니다.")
 class InactiveMemberException(status: UserStatus) :
     RuntimeException("로그인할 수 없는 회원 상태입니다: $status")
+class SocialAccountPasswordLoginException(provider: AuthProvider) :
+    RuntimeException("$provider 계정은 비밀번호 로그인을 지원하지 않습니다. 소셜 로그인을 이용해주세요.")
 
 @Service
 class AuthService(
@@ -49,6 +52,9 @@ class AuthService(
     fun login(request: LoginRequest): AuthenticationResponse {
         val member = findByEmailOrNull(request.email) ?: throw InvalidCredentialsException()
 
+        if (member.provider != AuthProvider.LOCAL) {
+            throw SocialAccountPasswordLoginException(member.provider)
+        }
         if (!passwordEncoder.matches(request.password, member.passwordHash)) {
             throw InvalidCredentialsException()
         }
@@ -76,7 +82,11 @@ class AuthService(
         refreshTokenStore.revoke(refreshToken)
     }
 
-    private fun authenticate(member: MemberInternalView): AuthenticationResponse {
+    /**
+     * 인증 통과 후 공통적으로 호출되는 토큰 발급 + 캐시 적재.
+     * OAuth 서비스도 회원 식별이 끝난 뒤 이 흐름을 그대로 재사용.
+     */
+    fun authenticate(member: MemberInternalView): AuthenticationResponse {
         val context = member.toContext()
         userContextCache.put(context)
         val access = jwtIssuer.issue(memberId = member.id, email = member.email, role = member.role)

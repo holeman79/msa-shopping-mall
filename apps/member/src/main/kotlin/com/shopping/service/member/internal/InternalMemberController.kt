@@ -1,7 +1,9 @@
 package com.shopping.service.member.internal
 
+import com.shopping.context.AuthProvider
 import com.shopping.service.member.context.MemberContextMapper.toDomain
 import com.shopping.service.member.domain.Member
+import com.shopping.service.member.domain.MemberRole
 import com.shopping.service.member.domain.MemberStatus
 import com.shopping.service.member.domain.SellerApprovalStatus
 import com.shopping.service.member.repository.MemberRepository
@@ -14,11 +16,12 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 // Reachable only via Eureka-discovered service-to-service Feign calls.
-// Gateway routes only /api/{slash}{slash} so /internal/{slash}{slash} is not exposed externally.
+// Gateway routes only /api/** so /internal/** is not exposed externally.
 @RestController
 @RequestMapping("/internal/members")
 class InternalMemberController(private val memberRepository: MemberRepository) {
@@ -28,6 +31,17 @@ class InternalMemberController(private val memberRepository: MemberRepository) {
     fun findByEmail(@PathVariable email: String): MemberInternalView {
         val member = memberRepository.findByEmail(email)
             ?: throw MemberByEmailNotFoundException(email)
+        return MemberInternalView.from(member)
+    }
+
+    @GetMapping("/by-provider")
+    @Transactional(readOnly = true)
+    fun findByProvider(
+        @RequestParam provider: AuthProvider,
+        @RequestParam providerId: String,
+    ): MemberInternalView {
+        val member = memberRepository.findByProviderAndProviderId(provider, providerId)
+            ?: throw MemberByProviderNotFoundException(provider, providerId)
         return MemberInternalView.from(member)
     }
 
@@ -53,11 +67,13 @@ class InternalMemberController(private val memberRepository: MemberRepository) {
             phone = request.phone,
             role = role,
             status = MemberStatus.ACTIVE,
-            sellerApprovalStatus = if (role == com.shopping.service.member.domain.MemberRole.SELLER) {
+            sellerApprovalStatus = if (role == MemberRole.SELLER) {
                 SellerApprovalStatus.APPROVED
             } else {
                 SellerApprovalStatus.NOT_APPLICABLE
             },
+            provider = request.provider,
+            providerId = request.providerId,
         )
         return MemberInternalView.from(memberRepository.save(member))
     }
@@ -65,3 +81,6 @@ class InternalMemberController(private val memberRepository: MemberRepository) {
 
 class MemberByEmailNotFoundException(email: String) :
     RuntimeException("이메일에 해당하는 회원이 없습니다: $email")
+
+class MemberByProviderNotFoundException(provider: AuthProvider, providerId: String) :
+    RuntimeException("$provider 계정($providerId)에 해당하는 회원이 없습니다.")

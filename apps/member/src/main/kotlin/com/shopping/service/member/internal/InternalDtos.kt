@@ -1,5 +1,6 @@
 package com.shopping.service.member.internal
 
+import com.shopping.context.AuthProvider
 import com.shopping.context.SellerApprovalStatus as ContextSellerApprovalStatus
 import com.shopping.context.UserRole
 import com.shopping.context.UserStatus
@@ -16,6 +17,8 @@ data class MemberInternalView(
     val role: UserRole,
     val status: UserStatus,
     val sellerApprovalStatus: ContextSellerApprovalStatus,
+    val provider: AuthProvider,
+    val providerId: String?,
     val joinedAt: Instant,
 ) {
     companion object {
@@ -28,6 +31,8 @@ data class MemberInternalView(
             role = member.role.toContext(),
             status = member.status.toContext(),
             sellerApprovalStatus = member.sellerApprovalStatus.toContext(),
+            provider = member.provider,
+            providerId = member.providerId,
             joinedAt = member.joinedAt,
         )
     }
@@ -39,4 +44,6 @@ data class MemberInternalCreateRequest(
     val name: String,
     val phone: String?,
     val role: UserRole,
+    val provider: AuthProvider = AuthProvider.LOCAL,
+    val providerId: String? = null,
 )

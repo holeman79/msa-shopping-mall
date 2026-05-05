@@ -1,6 +1,7 @@
 package com.shopping.service.member.api
 
 import com.shopping.service.member.internal.MemberByEmailNotFoundException
+import com.shopping.service.member.internal.MemberByProviderNotFoundException
 import com.shopping.service.member.service.DuplicateEmailException
 import com.shopping.service.member.service.MemberNotFoundException
 import org.springframework.http.HttpStatus
@@ -31,6 +32,10 @@ class MemberExceptionHandler {
 
     @ExceptionHandler(MemberByEmailNotFoundException::class)
     fun handleNotFoundByEmail(e: MemberByEmailNotFoundException) =
+        error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", e.message)
+
+    @ExceptionHandler(MemberByProviderNotFoundException::class)
+    fun handleNotFoundByProvider(e: MemberByProviderNotFoundException) =
         error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", e.message)
 
     @ExceptionHandler(MethodArgumentNotValidException::class)

@@ -21,6 +21,19 @@ export function useLogin() {
   });
 }
 
+export function useKakaoLogin() {
+  const setSession = useAuthStore((s) => s.setSession);
+  return useMutation<LoginResult, Error, string>({
+    mutationFn: (code) => authApi.kakao.login(code),
+    onSuccess: (data) => setSession(data),
+  });
+}
+
+export async function startKakaoOAuthRedirect(): Promise<void> {
+  const { url } = await authApi.kakao.authorizeUrl();
+  window.location.href = url;
+}
+
 export function useLogout() {
   const clear = useAuthStore((s) => s.clear);
   return async () => {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { KakaoLoginButton } from "@/components/auth/kakao-login-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,15 @@ export default function SignupPage() {
             {signup.isPending ? "가입 중..." : "회원가입"}
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs text-(--color-muted-foreground)">
+          <div className="h-px flex-1 bg-(--color-border)" />
+          <span>또는</span>
+          <div className="h-px flex-1 bg-(--color-border)" />
+        </div>
+
+        <KakaoLoginButton label="카카오로 시작하기" />
+
         <p className="mt-6 text-center text-sm text-(--color-muted-foreground)">
           이미 계정이 있으신가요?{" "}
           <Link href="/login" className="font-medium text-(--color-primary) hover:underline">
